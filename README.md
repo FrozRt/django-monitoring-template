@@ -10,6 +10,7 @@ location /nginx_metrics {
 }
 ```
 4) This monitoring template use project docker network and that means you should connect to external project network in the same server 
+5) Do not forget replace target containers naming in prometheus.yml
 
 You can get acquainted with more exporters on  [prometheus](https://prometheus.io/docs/instrumenting/exporters/) official website.  
 My advice for node exporter dashboard - 11074  
