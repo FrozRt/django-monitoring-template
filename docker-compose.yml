@@ -1,0 +1,73 @@
+version: "3.9"
+
+x-settings: &monitoring
+  networks:
+    - project_monitoring
+  restart: on-failure
+
+services:
+  prometheus:
+    container_name: monitoring-prometheus
+    image: prom/prometheus:v2.14.0
+    <<: *monitoring
+    volumes:
+      - prometheus-volume:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/django.rules:/etc/prometheus/django.rules
+    ports:
+      - ${PROMETHEUS_PORT}:9090
+
+  sentry-exporter:
+    container_name: monitoring-sentry-exporter
+    image: ujamii/prometheus-sentry-exporter
+    <<: *monitoring
+    environment:
+      SENTRY_HOST: ${SENTRY_HOST}
+      AUTH_TOKEN: ${AUTH_TOKEN}
+    expose:
+      - 80
+
+  celery-exporter:
+    container_name: monitoring-celery-exporter
+    build:
+      context: .
+      dockerfile: Dockerfile-celery-exporter
+    <<: *monitoring
+    command: "celery-exporter --listen-address 0.0.0.0:9540 --broker-url redis://${REDIS_CONTAINER_NAME}:${REDIS_PORT}/0"
+    expose:
+      - 9540
+
+  node-exporter:
+    container_name: monitoring-node-exporter
+    image: prom/node-exporter
+    <<: *monitoring
+    expose:
+      - 9100
+
+  grafana:
+    container_name: monitoring-grafana
+    image: grafana/grafana:8.0.3-ubuntu
+    <<: *monitoring
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    ports:
+      - ${GRAFANA_PORT}:3000
+
+  nginx-exporter:
+    container_name: monitoring-nginx
+    image: nginx/nginx-prometheus-exporter:0.8.0
+    <<: *monitoring
+    command:
+      - -nginx.scrape-uri
+      - http://${NGINX_CONTAINER_NAME}:${NGINX_CONTAINER_PORT}/nginx_metrics
+    expose:
+      - 9113
+
+volumes:
+  prometheus-volume:
+  grafana-storage:
+
+networks:
+  project_monitoring:
+    external: true
+    name: ${PROJECT_NETWORK}

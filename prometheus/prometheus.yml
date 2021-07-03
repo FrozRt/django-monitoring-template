@@ -1,0 +1,55 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+
+  external_labels:
+    monitor: django-monitor
+
+rule_files:
+  - 'django.rules'
+
+scrape_configs:
+  - job_name: django
+    metrics_path: /api/metrics
+    scheme: http
+    tls_config:
+      insecure_skip_verify: true
+    static_configs:
+      - targets:
+        - project-nginx-container-name:8080
+
+  - job_name: sentry
+    metrics_path: /metrics
+    scrape_interval: 30s
+    scrape_timeout: 30s
+    scheme: http
+    static_configs:
+      - targets:
+        - sentry-exporter:80
+
+  - job_name: node
+    honor_timestamps: true
+    scrape_interval: 10s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+        - node-exporter:9100
+
+  - job_name: celery
+    scrape_interval: 20s
+    scrape_timeout: 20s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+        - celery-exporter:9540
+
+  - job_name: nginx
+    scrape_interval: 10s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+        - nginx-exporter:9113

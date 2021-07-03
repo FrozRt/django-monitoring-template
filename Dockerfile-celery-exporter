@@ -1,0 +1,23 @@
+FROM python:3.8-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+ARG USER=celery-exporter
+
+RUN groupadd --gid 2000 $USER \
+ && useradd --uid 2000 \
+            --gid $USER \
+            --shell /bin/bash \
+            --create-home $USER
+
+RUN apt-get update \
+ && apt-get install -y  \
+                    libpq-dev \
+                    python-dev \
+                    gcc \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir celery-exporter redis
+
+USER $USER
